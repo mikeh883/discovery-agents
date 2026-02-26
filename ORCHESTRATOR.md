@@ -38,45 +38,131 @@ sessions_spawn({
   task: `
     You are a topic-specific discovery agent for: ${topic}
     
-    Process:
-    1. Read source list: discoveries/sources/${topic}.md
-    2. Fetch RSS feeds for this topic only
-    3. Check .discoveries-tracking.json for new content (skip seen URLs)
-    4. Score relevance for new items (batch 5-10 per LLM call)
-    5. Create Obsidian notes for items scoring 60+
-    6. Update .discoveries-tracking.json with new URLs
-    7. Generate manifest: discoveries/meta/.manifests/${timestamp}-${topic}.json
+    CRITICAL: You are CREATING a new manifest file, not reading an existing one.
     
-    Manifest format:
+    STEP-BY-STEP PROCESS:
+    
+    1. READ SOURCE LIST
+       - File: discoveries/sources/${topic}.md
+       - Extract all RSS feed URLs
+       - Count total sources
+    
+    2. FETCH RSS FEEDS (with retry logic)
+       - For each URL, use web_fetch with extractMode: 'text'
+       - If fetch fails (404/timeout):
+         * Retry once after 5 seconds
+         * If still fails: Log error, mark source as failed, CONTINUE to next feed
+       - Parse XML to extract: title, link, pubDate, description
+       - Track: successful fetches, failed fetches
+    
+    3. FILTER NEW CONTENT
+       - Load discoveries/.discoveries-tracking.json (if exists, otherwise assume empty)
+       - For each RSS item:
+         * If URL already in tracking → skip
+         * If pubDate > 24 hours ago → skip
+         * Otherwise → add to "newContent" list
+    
+    4. SCORE RELEVANCE (batch processing)
+       - For each new item (batch 5-10 at a time):
+         * Generate 2-3 sentence summary from title + description
+         * Score 0-100 based on:
+           - Topic match to ${topic}
+           - Novelty (unique angle vs obvious)
+           - Actionability (can user do something with this)
+         * Provide: score, reasoning (1-2 sentences), keyPoints (3-5 bullets), tags (2-4)
+    
+    5. CREATE MINIMAL OBSIDIAN NOTES (for items 60+)
+       - File path: discoveries/[platform]/YYYY-MM-DD-[slug-from-title].md
+       - Content template:
+         ---
+         source: [platform]
+         creator: [creator]
+         topic: [${topic}]
+         discovered: [ISO timestamp]
+         relevance: [score]
+         url: [URL]
+         ---
+         
+         # [Title]
+         
+         [2-3 sentence summary]
+         
+         ## Key Points
+         [Bullet list from scoring]
+         
+         ## Source
+         [Creator] • [Platform] • [Date]
+         [URL]
+       
+       - Track created note paths for manifest
+    
+    6. UPDATE TRACKING
+       - Load discoveries/.discoveries-tracking.json
+       - Add all new URLs with current timestamp
+       - Write back to file
+    
+    7. CREATE MANIFEST (this is a NEW file you're creating)
+       - Path: discoveries/meta/.manifests/${timestamp}-${topic}.json
+       - Content:
+         {
+           "topic": "${topic}",
+           "timestamp": "[ISO timestamp when run started]",
+           "discoveries": [
+             {
+               "title": "...",
+               "url": "...",
+               "creator": "...",
+               "platform": "youtube|substack|twitter|rss",
+               "relevance": 85,
+               "tags": ["tag1", "tag2"],
+               "keyPoints": ["point1", "point2", "point3"],
+               "reasoning": "why this matters",
+               "notePath": "discoveries/platform/YYYY-MM-DD-slug.md"
+             }
+           ],
+           "stats": {
+             "sourcesTotal": 15,
+             "feedsChecked": 12,
+             "feedsFailed": 3,
+             "failedSources": ["URL1", "URL2"],
+             "newContent": 8,
+             "addedToVault": 3,
+             "avgRelevance": 72
+           }
+         }
+    
+    DECISION MAKING:
+    - If RSS feed fails after retry → Skip and continue (mark in failedSources)
+    - If .discoveries-tracking.json doesn't exist → Assume empty, create new
+    - If scoring LLM call fails → Use simple keyword match (score 40-50), note in reasoning
+    - If note write fails → Log path to manifest but mark with "writeError": true
+    
+    VALIDATION CHECKPOINTS:
+    - After step 2: Confirm you have RSS data (even if some failed)
+    - After step 3: Confirm you have newContent list (can be empty)
+    - After step 4: Confirm you have scored items
+    - After step 7: Confirm manifest file was created
+    
+    RETURN FORMAT:
     {
-      "topic": "${topic}",
-      "timestamp": "${ISO timestamp}",
-      "discoveries": [
-        {
-          "title": "...",
-          "url": "...",
-          "creator": "...",
-          "platform": "youtube|substack|twitter|rss",
-          "relevance": 85,
-          "tags": ["tag1", "tag2"],
-          "keyPoints": ["point1", "point2", "point3"],
-          "reasoning": "why this matters",
-          "notePath": "discoveries/platform/YYYY-MM-DD-slug.md"
-        }
-      ],
+      "manifestPath": "discoveries/meta/.manifests/[timestamp]-${topic}.json",
       "stats": {
-        "feedsChecked": 12,
-        "newContent": 8,
-        "addedToVault": 3,
+        "sourcesTotal": 15,
+        "feedsSuccessful": 12,
+        "feedsFailed": 3,
+        "newItems": 8,
+        "notesCreated": 3,
         "avgRelevance": 72
-      }
+      },
+      "issues": [
+        "Feed failed: URL (404)",
+        "Note write failed: path"
+      ]
     }
-    
-    Return: Path to manifest file
   `,
   label: `discover-${topic}`,
-  model: 'google/gemini-2.5-flash-lite',  // Budget querying: $0.10 per 1M tokens
-  runTimeoutSeconds: 600  // 10 min per topic
+  model: 'google/gemini-2.5-flash-lite',
+  runTimeoutSeconds: 600
 })
 ```
 
