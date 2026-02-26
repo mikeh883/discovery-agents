@@ -1,0 +1,33 @@
+# Tracking files (user-specific data)
+../../discoveries/.discoveries-tracking.json
+../../discoveries/.discoveries-engagement.json
+
+# Manifests (temporary build artifacts)
+../../discoveries/meta/.manifests/
+
+# Generated digests (content, not code)
+../../discoveries/digests/
+
+# Discovery notes (content, not code)
+../../discoveries/youtube/
+../../discoveries/substack/
+../../discoveries/twitter/
+../../discoveries/rss/
+
+# Node modules if any
+node_modules/
+
+# Environment files
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
