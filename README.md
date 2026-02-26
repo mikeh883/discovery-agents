@@ -1,176 +1,190 @@
-# Discovery Agents - Project Overview
+# Discovery Agents
 
-**Status:** Design Complete, Ready to Build  
-**Created:** 2026-02-24
+**Autonomous AI content discovery system for Obsidian**
 
-## What Is This?
+Monitor 82+ RSS sources across 8 topics, filter by relevance, create detailed notes, and deliver scannable digests to Discord.
 
-A two-tier autonomous content discovery system that finds, filters, and curates content from across the web, automatically adding relevant discoveries to your Obsidian vault.
+## Features
 
-**You get:** Personalized daily digests of high-quality content without manual hunting.
+- **RSS-Based Monitoring**: No API keys required, universal compatibility
+- **8 AI Topics**: LLM Architecture, AI News, Model Releases, Agents, Frameworks, Vibe Coding, OpenClaw, Local LLM
+- **Smart Filtering**: LLM-powered relevance scoring (60+ threshold)
+- **Automated Discovery**: Runs 4x daily (6 AM, 12 PM, 6 PM, 12 AM CST)
+- **3-Layer Digest**: Behavioral science format optimized for mobile scanning
+  - **Layer 1 (The Signal)**: 5-second scan - headline + 3 key findings + urgency
+  - **Layer 2 (The Synthesis)**: 30-second evaluation - consensus, themes, sentiment
+  - **Layer 3 (The Evidence)**: On-demand deep dive - quotes, credibility, detailed notes
+- **Cross-Source Synthesis**: Detect patterns, consensus, and conflicts across platforms
+- **Discord Integration**: Push notifications to digest channel
+- **Obsidian Sync**: Auto-created discovery notes with backlinks
+- **Learning Feedback Loop**: "mark engaging" / "not interested" commands improve scoring
 
-## How It Works
+## Architecture
+
+**Hybrid Model Approach:**
+- **Phase 1 (Discovery)**: 8 parallel Gemini Flash 2.0 agents (one per topic)
+  - RSS fetching, parsing, relevance scoring
+  - Creates Obsidian notes for 60+ items
+  - Generates topic manifests
+- **Phase 2 (Synthesis)**: 1 Gemini Pro 1.5 agent (cross-source analysis)
+  - 1M token context window
+  - Consensus/conflict detection
+  - Theme extraction, sentiment analysis
+  - 3-layer digest generation
+- **Phase 3 (Delivery)**: Discord notification + Obsidian storage
+
+**Cost**: ~$0.02-0.03 per run (~$3/month for 4x daily)
+
+## Installation
+
+1. **Clone this repo into your Obsidian vault:**
+   ```bash
+   cd /path/to/vault/projects
+   git clone https://github.com/YOUR_USERNAME/discovery-agents.git
+   ```
+
+2. **Create required directories:**
+   ```bash
+   cd ../../
+   mkdir -p discoveries/{sources,youtube,substack,twitter,rss,digests,meta/.manifests}
+   ```
+
+3. **Copy source lists:**
+   ```bash
+   cp projects/discovery-agents/sources/*.md discoveries/sources/
+   ```
+
+4. **Set up Discord webhook** (optional):
+   - Create a #digest channel
+   - Note the channel ID for config
+
+5. **Configure OpenClaw cron jobs:**
+   - Follow `ORCHESTRATOR.md` for cron setup
+   - Use Gemini Flash 2.0 for orchestrator
+   - Use Gemini Pro 1.5 for synthesis
+
+## Documentation
+
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System overview, data flow
+- **[ORCHESTRATOR.md](ORCHESTRATOR.md)** - Main coordination logic
+- **[CONTENT-MONITOR-AGENT.md](CONTENT-MONITOR-AGENT.md)** - Discovery agent spec
+- **[MODEL-STRATEGY.md](MODEL-STRATEGY.md)** - Gemini/Claude hybrid approach
+- **[META-DISCOVERY-AGENT.md](META-DISCOVERY-AGENT.md)** - Weekly source updates
+- **[COMMANDS.md](COMMANDS.md)** - User interaction patterns
+- **[digest-format-spec.md](../discoveries/meta/digest-format-spec.md)** - 3-layer format spec
+
+## Usage
+
+### Commands
 
 ```
-You define topics (e.g., "LLM Architecture", "AI Agents")
-    ↓
-Meta-Discovery Agent (weekly)
-    → Finds top YouTube channels, Substacks, Twitter accounts
-    → Builds curated follow lists
-    ↓
-Content Monitor Agents (every 6 hours)
-    → Checks RSS feeds for new content
-    → Scores relevance with LLM (60+ = relevant)
-    → Auto-adds to Obsidian
-    → Sends Discord digest
-    ↓
-You review discoveries in Obsidian
-    → Mark engaging (feedback loop)
-    → Drill in for deep analysis
-    → Connect to your vault
+drill in [title]           - Deep analysis with full content fetch
+mark engaging [title]      - Boost similar content (+15/+10/+5)
+not interested [title]     - Filter similar content (-20/-10)
+show today                 - View latest digest
+search discoveries [query] - Full-text search
 ```
 
-## Initial Topics
+### Cron Schedule
 
-1. **LLM Architecture** - Model designs, training, inference
-2. **AI News** - Industry developments, funding, releases
-3. **AI Model Releases** - New models, benchmarks, capabilities
-4. **Agents** - Agent frameworks, autonomous systems, multi-agent
-5. **AI Frameworks** - LangChain, LlamaIndex, new tooling
-6. **Vibe Coding** - AI-assisted development, coding agents
-7. **OpenClaw** - Updates, community, related projects
-8. **Local LLM** - Self-hosted models, privacy, optimization
-
-## Core Features
-
-### Discovery
-- **Automated monitoring:** YouTube, Substack, Twitter, RSS
-- **Smart filtering:** LLM-based relevance scoring (0-100)
-- **Quality over quantity:** Only add 60+ relevance content
-- **No API required:** RSS-based (free, universal)
-
-### Curation
-- **Auto-add to Obsidian:** Formatted notes with metadata
-- **Daily digests:** Aggregated summaries by run
-- **Organized by platform:** youtube/, substack/, twitter/, rss/
-- **Deduplication:** Never add the same content twice
-
-### Intelligence
-- **Related notes:** Automatically links to your vault
-- **Engagement learning:** Tracks what you like, adjusts future scoring
-- **Deep dive:** "Drill in" command for full analysis
-- **Pattern recognition:** Topics, creators, insights
-
-### Notifications
-- **Discord integration:** Digest summaries after each run
-- **Customizable:** 4x daily or end-of-day consolidated
-- **Actionable:** Links to notes, commands for drill-in
-
-## Commands
-
-**Manual triggers:**
-- `"run meta-discovery for [topic]"` - Find new sources
-- `"drill in [title]"` - Deep analysis of a discovery
-- `"mark engaging [title]"` - Improve recommendations
-- `"not interested [title]"` - Filter out similar content
-- `"show me discoveries from today"` - Review digest
-
-**Automatic (cron):**
-- Content monitoring: Every 6 hours
-- Meta-discovery: Weekly (Sunday 2 AM)
+- **Morning**: 6 AM CST
+- **Noon**: 12 PM CST
+- **Evening**: 6 PM CST
+- **Midnight**: 12 AM CST
+- **Meta-Discovery**: Sunday 2 AM CST (weekly source updates)
 
 ## File Structure
 
 ```
 discoveries/
-  sources/                    # Follow lists per topic
-    llm-architecture.md       # YouTube, Substack, Twitter, RSS
-    ai-news.md
-    agents.md
-    ...
-  
-  youtube/                    # Platform-specific discoveries
-    2026-02-24-yannic-kilcher-attention.md
-  substack/
-    2026-02-24-import-ai-gpt5.md
-  twitter/
-    2026-02-24-karpathy-thread.md
-  rss/
-    2026-02-24-hackernews-ai.md
-  
-  digests/                    # Daily digests
-    2026-02-24-digest.md
-  
-  meta/                       # Stats, logs, config
-    stats.json
-    config.json
-  
-  .discoveries-tracking.json  # Seen content (deduplication)
-  .discoveries-engagement.json # User feedback (learning)
+├── sources/               # RSS source lists (8 topics)
+├── youtube/              # YouTube discoveries
+├── substack/             # Substack discoveries
+├── twitter/              # Twitter/X discoveries
+├── rss/                  # Generic RSS discoveries
+├── digests/              # Daily digest markdown files
+├── meta/
+│   ├── .manifests/       # Topic manifests (temp)
+│   ├── config.json       # System configuration
+│   └── digest-format-spec.md  # Format specification
+├── .discoveries-tracking.json   # Seen content tracking
+└── .discoveries-engagement.json # User feedback data
 ```
 
-## Implementation Status
+## Customization
 
-- [x] Architecture designed
-- [x] Meta-discovery agent spec
-- [x] Content monitor agent spec
-- [x] Implementation roadmap (3 weeks)
-- [ ] Directory structure created
-- [ ] Initial meta-discovery run (test)
-- [ ] RSS fetcher built
-- [ ] Relevance scoring tested
-- [ ] First discoveries created
-- [ ] Cron jobs scheduled
+### Add New Sources
 
-## Next Steps
+Edit source files in `discoveries/sources/[topic].md`:
 
-1. **Day 1:** Create directory structure, run meta-discovery for "LLM Architecture" (test)
-2. **Week 1:** Build RSS fetcher, test relevance scoring, create first discoveries
-3. **Week 2:** Scale to all 8 topics, set up cron jobs, Discord notifications
-4. **Week 3:** Engagement tracking, drill-in feature, related notes, tuning
+```markdown
+## YouTube
+- [Channel Name](https://youtube.com/@channel) - RSS: https://youtube.com/feeds/...
 
-## Documentation
+## Substack
+- [Newsletter Name](https://newsletter.substack.com) - RSS: https://newsletter.substack.com/feed
+```
 
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Full system design, workflow, technical details
-- **[META-DISCOVERY-AGENT.md](./META-DISCOVERY-AGENT.md)** - How to find sources
-- **[CONTENT-MONITOR-AGENT.md](./CONTENT-MONITOR-AGENT.md)** - How to monitor content
-- **[IMPLEMENTATION.md](./IMPLEMENTATION.md)** - Build roadmap, testing, rollout
+### Adjust Relevance Threshold
 
-## Tech Stack
+Edit `discoveries/meta/config.json`:
+```json
+{
+  "relevanceThreshold": 60,
+  "engagementBoost": {
+    "creator": 15,
+    "topic": 10,
+    "platform": 5
+  }
+}
+```
 
-- **OpenClaw tools:** web_search, web_fetch, Write, Read, message, cron, sessions_spawn
-- **Data sources:** RSS feeds (YouTube, Substack, nitter for Twitter)
-- **Intelligence:** LLM scoring, summarization, topic extraction
-- **Storage:** Obsidian markdown notes, JSON tracking files
-- **Notifications:** Discord
+### Customize Digest Format
 
-**No external dependencies.** Everything uses RSS (free, no API keys).
+Edit `discoveries/meta/digest-format-spec.md` to adjust:
+- Layer 1 structure (signal)
+- Layer 2 synthesis approach
+- Layer 3 evidence presentation
 
-## Success Criteria
+## Technical Details
 
-### Week 1
-- 8 source lists created (10-15 sources each)
-- 5-10 discoveries per run
-- 20-40 discoveries daily
+**Models:**
+- Discovery: Gemini Flash 2.0 (~$0.075 per 1M tokens)
+- Synthesis: Gemini Pro 1.5 (~$1.25 per 1M tokens)
 
-### Week 2
-- 70%+ relevance rate (not dismissed)
-- 20%+ engagement rate (marked engaging)
-- User finds 2-3 high-value insights daily
+**Rate Limits:**
+- Max 5 parallel sub-agents per session
+- Solution: Batch processing (5 topics, wait, then 3 more)
 
-### Week 3+
-- Saves 1-2 hours of manual discovery time daily
-- Makes 3-5 vault connections per week
-- System runs autonomously with minimal tuning
+**RSS Parsing:**
+- Timeout: 30 sec per feed
+- Retries: 3 failures → mark source inactive
 
-## Why This Matters
+**Tracking:**
+- Seen content: 24-hour window for new discoveries
+- Engagement: Persistent across sessions
 
-**The Problem:** You spend hours hunting for good content across YouTube, Twitter, Substack. You miss things. You see duplicates. Discovery is friction.
+## Roadmap
 
-**The Solution:** Agents do the hunting. You do the synthesis. Wake up to curated, relevant content waiting in Obsidian. Focus on ideas, not hunting.
+- [ ] Smart bundling (group related discoveries)
+- [ ] Trend tracking (topic frequency over time)
+- [ ] Conflict detection (highlight disagreements)
+- [ ] Creator reputation scoring
+- [ ] Push notifications for urgency=5 items
+- [ ] Voice digest (audio summary)
+- [ ] Readwise/Pocket integration
+- [ ] Email digest option
 
-**The Secret Sauce:** It's not just aggregation—it's *intelligent curation* that learns what you care about and connects to your existing knowledge.
+## Contributing
+
+This is a personal project, but ideas welcome! Open an issue to discuss.
+
+## License
+
+MIT
 
 ---
 
-**Ready to build?** Start with Day 1 in IMPLEMENTATION.md or ask to run the first meta-discovery test.
+**Built with:** OpenClaw, Claude Sonnet 4.5, Gemini Flash 2.0, Gemini Pro 1.5  
+**Platform:** Obsidian + Discord  
+**Cost:** ~$3/month for 4x daily monitoring
