@@ -15,30 +15,30 @@
 **Where:** Interactive sessions (this conversation)
 
 ### Execution - Phase 1 (Discovery)
-**Model:** Gemini Flash 2.0  
+**Model:** Gemini 2.5 Flash-Lite  
 **Use:** RSS fetching, parsing, relevance scoring, note creation  
 **Count:** 8 parallel agents (one per topic)  
 **Why:**
-- Very cheap: ~$0.075 per 1M input tokens
+- Very cheap: ~$0.10 per 1M input tokens (Budget Querying)
 - High rate limits: handles 5-8 parallel agents easily
 - Fast: optimized for throughput
-- Good enough: structured tasks don't need Claude-level reasoning
+- Good enough: structured tasks don't need deep reasoning
 
 **Cost per agent:** ~$0.001-0.002  
 **Total Phase 1:** ~$0.008-0.016
 
 ### Execution - Phase 2 (Synthesis)
-**Model:** Gemini Pro 1.5  
+**Model:** Gemini 2.5 Pro  
 **Use:** Cross-source analysis, digest generation, Discord posting  
 **Count:** 1 agent (after all discoveries complete)  
 **Why:**
-- 1M token context: can hold all 8 manifests + full discoveries
+- 2M token context: can hold all 8 manifests + full discoveries (Max Context)
 - Superior at pattern detection across large contexts
-- Cheap: ~$1.25 per 1M input tokens
+- Cost: ~$1.25-2.50 per 1M input tokens
 - Critical for Layer 2 synthesis (consensus, conflicts, themes)
 
-**Cost per run:** ~$0.005-0.010  
-**Total Phase 2:** ~$0.005-0.010
+**Cost per run:** ~$0.010-0.020  
+**Total Phase 2:** ~$0.010-0.020
 
 ## Total Cost Comparison
 
@@ -63,7 +63,7 @@
 sessions_spawn({
   task: "...",
   label: "discover-[topic]",
-  model: "google/gemini-flash-2.0",
+  model: "google/gemini-2.5-flash-lite",
   runTimeoutSeconds: 600
 })
 ```
@@ -73,7 +73,7 @@ sessions_spawn({
 sessions_spawn({
   task: "...",
   label: "synthesize-digest",
-  model: "google/gemini-pro-1.5",
+  model: "google/gemini-2.5-pro",
   runTimeoutSeconds: 300
 })
 ```
@@ -84,7 +84,7 @@ sessions_spawn({
   "payload": {
     "kind": "agentTurn",
     "message": "...",
-    "model": "google/gemini-flash-2.0"
+    "model": "google/gemini-2.5-flash-lite"
   }
 }
 ```

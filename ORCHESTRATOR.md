@@ -75,7 +75,7 @@ sessions_spawn({
     Return: Path to manifest file
   `,
   label: `discover-${topic}`,
-  model: 'google/gemini-flash-2.0',  // Cheap, fast, high throughput
+  model: 'google/gemini-2.5-flash-lite',  // Budget querying: $0.10 per 1M tokens
   runTimeoutSeconds: 600  // 10 min per topic
 })
 ```
@@ -127,7 +127,7 @@ sessions_spawn({
     Return: Path to digest file
   `,
   label: 'synthesize-digest',
-  model: 'google/gemini-pro-1.5',  // 1M context for cross-source synthesis
+  model: 'google/gemini-2.5-pro',  // 2M context for cross-source synthesis
   runTimeoutSeconds: 300  // 5 min for synthesis
 })
 ```
@@ -257,7 +257,7 @@ Update cron job prompts to reference this orchestrator:
   "payload": {
     "kind": "agentTurn",
     "message": "Run content monitoring orchestrator. Follow /Users/mikehollowaydev/Documents/Obsidian Vault/projects/discovery-agents/ORCHESTRATOR.md exactly. Return summary with digest link.",
-    "model": "google/gemini-flash-2.0",  // Cheap orchestrator
+    "model": "google/gemini-2.5-flash-lite",  // Budget orchestrator
     "timeoutSeconds": 1200
   },
   "sessionTarget": "isolated",
